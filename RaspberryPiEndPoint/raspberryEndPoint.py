@@ -91,8 +91,8 @@ def notificationModule():
 def connectToDB():
     mySQLconnectionDetails = mysql.connector.connect(
         host="localhost",
-        user="admin",
-        passwd="access70",
+        user="user",
+        passwd="password",
         database="myTestDB"
     )
     # Output the connection object
