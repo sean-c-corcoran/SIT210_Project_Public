@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Add a Plant</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script src="https://rawgit.com/sitepoint-editors/jsqrcode/master/src/qr_packed.js"></script>
+</head>
+<style>
+    body,
+    input {
+        font-size: 14pt
+    }
+
+    input,
+    label {
+        vertical-align: middle
+    }
+
+    .qrcode-text {
+        padding-right: 1.7em;
+        margin-right: 0
+    }
+
+    .qrcode-text-btn {
+        display: inline-block;
+        background: url(//dab1nmslvvntp.cloudfront.net/wp-content/uploads/2017/07/1499401426qr_icon.svg) 50% 50% no-repeat;
+        height: 1.4em;
+        width: 1.7em;
+        margin-left: -1.7em;
+        cursor: pointer
+    }
+
+    .qrcode-text-btn>input[type=file] {
+        position: absolute;
+        overflow: hidden;
+        width: 1px;
+        height: 1px;
+        opacity: 0
+    }
+</style>
+
+<body>
+    <center>
+        <div class="container">
+            <h2>Add A New Plant Pot</h2>
+            <hr>
+            <form action="insertData.php" method="post">
+                <div class="form-group">
+                    <label for="DeviceID">Device ID:</label>
+                    <input type=text name="field1" placeholder="Device Number" class=qrcode-text><label
+                        class=qrcode-text-btn><input type=file accept="image/*" capture=environment
+                            onchange="openQRCamera(this);" tabindex=-1></label>
+                </div>
+                <div class="form-group">
+                    <label for="friendly_Name">Name:</label>
+                    <input type=text name="field2" placeholder="Enter Plant Name">
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </center>
+
+</body>
+<script>
+    function openQRCamera(node) {
+        var reader = new FileReader();
+        reader.onload = function () {
+            node.value = "";
+            qrcode.callback = function (res) {
+                if (res instanceof Error) {
+                    alert("No QR code found. Please make sure the QR code is within the camera's frame and try again.");
+                } else {
+                    node.parentNode.previousElementSibling.value = res;
+                }
+            };
+            qrcode.decode(reader.result);
+        };
+        reader.readAsDataURL(node.files[0]);
+    }
+</script>
+
+</html>
