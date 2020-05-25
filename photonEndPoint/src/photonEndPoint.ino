@@ -9,8 +9,6 @@
  * Version: 2.1
  */
 
-String deviceID; // <- used to hold the data of the particle's device name.
-String fakeData = "Hello_I_Am_Fake_Data";
 int moistureSensor = A1; // <- Moisture sensor input pin
 int lightSensor = A2;    // <- Light sensor input pin
 int moistureRealTime;    // <- Real time moisture reading
