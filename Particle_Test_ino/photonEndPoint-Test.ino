@@ -1,5 +1,5 @@
 /*
- * Project photonEndPoint
+ * Project photonEndPoint - Test (has a hard coded moisture value of 400 to issue notification and notifications are pushed every 2mins
  * Description: The following takes readings from two analog sensors one a moisture sensor another a light sensor, 
  *              builds avgs over the course of 1 min then updates variables that sit on the particle cloud, 
  *              it also has a notification system, that publishes public events if the moisture level gets to low, it does have a set variable that allows 
@@ -19,8 +19,7 @@ int moistureAvg;         // <- The Avg of the soil mosture after the set samplin
 int lightAvg;            // <- The Avg of then light sensor after the set sampling time
 int numOfSamples = 59;   // <- Amount for samples to take of sensor readings (samples are taken 1 second apart) default should be set to 59 (1 min of sampling)
 
-//long notificationInterval = 13200000; // 43200000 every 12 hours a new low water notification can fire
-long notificationInterval = 1800000; // every 30 mins (60000 = 1 min) 1800000 = 30mins  #issue event notifcations at these time intervals
+long notificationInterval = 120000; // (60000 = 1 min) #issue event notifcations at these time intervals
 long triggerTime;                    // used to hold the value of the time of the last notification
 bool firstTrigger = true;            // used to allow the first trigger and start the last trigger time
 
