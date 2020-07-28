@@ -16,3 +16,5 @@ Additionally the Raspberry Pi also reads the humidity and temperature of the giv
 Furthermore the Raspberry Pi monitors a publish event from the Particle Cloud if a smart pot’s soil moisture falls below a certain point to which it will look up it’s end user set name from the database and pass the information to the service IFTTT in the form of a Webhook.
 
 I have created a user manual on how to run the above code snippets and build this exact system which can be downloaded from here: https://drive.google.com/file/d/16Hw_WFQY2tQBXkMJqxQEoYm29X8ap_cF/view?usp=sharing
+
+Project demo video: https://drive.google.com/file/d/1oatlw4TawwaESMB_CjFbfUUIKVGeF44L/view?usp=sharing
