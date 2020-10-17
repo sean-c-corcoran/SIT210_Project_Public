@@ -1,295 +1,276 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>House Plant Dashboard</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="manifest" href="/site.webmanifest" />
-    <link
-      rel="stylesheet"
-      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
-    />
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-  </head>
-  <style>
-    html {
-      width: 100%;
-      height: 100%;
-    }
 
-    body {
-      text-align: center;
-      width: 100%;
-      height: 100%;
-    }
-
-    .box {
-      height: 200px;
-      width: 350px;
-
-      background-color: #9dbdcc;
-      border-radius: 5px;
-      box-shadow: inset 5px 5px rgba(0, 0, 0, 0.2);
-      margin-top: 15px;
-      margin-left: auto;
-      margin-right: auto;
-      display: inline-block;
-      font-size: 2.3em;
-    }
-
-    .gauges {
-      padding: 10px;
-      margin-top: 10px;
-      margin-left: auto;
-      margin-right: auto;
-      display: inline-block;
-    }
-  </style>
-
-  <body>
-    <h1>Smart Pots!</h1>
-    <hr />
-    <center>
-      <div id="top">
-        <div class="gauges" id="left">
-          <h3>House Temp</h3>
-          <iframe
-            width="450"
-            height="260"
-            src="https://thingspeak.com/channels/1059962/widgets/182008"
-          ></iframe>
-        </div>
-        <div class="gauges" id="right">
-          <h3>House Humidity</h3>
-          <iframe
-            width="450"
-            height="260"
-            src="https://thingspeak.com/channels/1059962/widgets/182006"
-          ></iframe>
-        </div>
-      </div>
-    </center>
-
-    <hr />
-    <!-- change this IP to reflect required address dns name / local server ip address -->
-    <a href="//192.168.1.187/add_device.html">
-      <button type="button" class="btn btn-success">Add New Pot</button>
-    </a>
-
-    <div id="txtHint">...</div>
-  </body>
-
-  <script>
-    // ### VARS!!!! ###
-    var deviceID; // set to the current device ID in the series after calling getDeviceID passing in the row required
-    var rowCount; // the number of rows in the table
-    var friendlyName; // set to the current friendly name of the device.
-    var accessToken = "Particle API Token"; // API access token for particle
-    var moistureVar2get = "moistureValue"; // Name of the particle var for the moisture value
-    var lightVar2get = "lightValue"; // Name of the particle var for the light value
-
-    var resOfLight; // the result of the call to get the light value
-    var resOfmoisture; // the result of the call to get the moisture value
-    var firstLoad = true; //start off true as it is the first load
-    var size; // amount of plants in database
-    var idealWaterLevel = 700; // any moisture reading below this level will render the plant box element the color red
-
-    // ### Functions ###
-
-    // ### Timed Call to update pfunctions
-    window.setInterval(deleteNReload, 60000); //reload every min
-
-    // this works which is some mad wizard black magic
-    function updateAndBuildPlants(
-      id,
-      deviceInput,
-      useableName,
-      deviceToRemove
-    ) {
-      var device = deviceInput;
-
-      //set the moisture get URL
-      var requestURLmoisture =
-        "https://api.particle.io/v1/devices/" +
-        device +
-        "/" +
-        moistureVar2get +
-        "/?access_token=" +
-        accessToken;
-
-      //set the light get URL
-      var requestURLlight =
-        "https://api.particle.io/v1/devices/" +
-        device +
-        "/" +
-        lightVar2get +
-        "/?access_token=" +
-        accessToken;
-
-      // Update(or Build) each box in async, wait for the response of each fetch request however.
-      // meaning that each box will be build in parallel however each box will wait for their individual fetch requests
-      const requestUpdate = async () => {
-        const moistureResponse = await fetch(requestURLmoisture);
-        const lightResponse = await fetch(requestURLlight);
-        const jsonMoistureData = await moistureResponse.json(); // Response of the moisture fetch returned in json
-        const jsonLightData = await lightResponse.json(); // Response of the light fetch returned in json
-        //alert(json.result);
-        resOfmoisture = jsonMoistureData.result;
-        resOfLight = jsonLightData.result;
-        //alert("Light: " + resOfLight + "Moisture: " + resOfmoisture);
-        //alert(id + " : " + device + " : " + useableName + " light: " + resOfLight + "Moisture: " + resOfmoisture);
-        if (parseInt(resOfmoisture, 10) < idealWaterLevel) {
-          $(document.body).append(
-            '<div class="box" id ="' +
-              id +
-              '" style="background-color: red; height: 270px; color: white;"><h1>' +
-              useableName +
-              '</h1><p id="lightText">Light Level: <span class="lightText" id="lightAmounts">' +
-              resOfLight +
-              '</span><br><p id="moistureText">Moisture Level: <span class="moistureText" id="moistureAmounts">' +
-              resOfmoisture +
-              '</span><br><p style="text-decoration: underline; ">Water Yo Plant</p><br><button id="updateButton" class="btn btn-danger" onclick="deleteRow(' +
-              deviceToRemove +
-              ')">Remove</button></div>'
-          );
-        } else if (parseInt(resOfmoisture, 10) < 1000) {
-          $(document.body).append(
-            '<div class="box" id ="' +
-              id +
-              '" style="background-color: green;"><h1>' +
-              useableName +
-              '</h1><p id="lightText">Light Level: <span class="lightText" id="lightAmounts">' +
-              resOfLight +
-              '</span><br><p id="moistureText">Moisture Level: <span class="moistureText" id="moistureAmounts">' +
-              resOfmoisture +
-              '</span><br><br><button id="updateButton" class="btn btn-danger" onclick="deleteRow(' +
-              deviceToRemove +
-              ')">Remove</button></div>'
-          );
-        } else {
-          $(document.body).append(
-            '<div class="box" id ="' +
-              id +
-              '"><h1>' +
-              useableName +
-              '</h1><p id="lightText">Light Level: <span class="lightText" id="lightAmounts">' +
-              resOfLight +
-              '</span><br><p id="moistureText">Moisture Level: <span class="moistureText" id="moistureAmounts">' +
-              resOfmoisture +
-              '</span><br><br><button id="updateButton" class="btn btn-danger" onclick="deleteRow(' +
-              deviceToRemove +
-              ')">Remove</button></div>'
-          );
+    <head>
+        <title>House Plant Dashboard</title>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    </head>
+    <style>
+        html {
+            width: 100%;
+            height: 100%;
         }
 
-        document.getElementById("txtHint").innerHTML = "..."; // display null action text
-        firstLoad = false; // elements have been loaded at least once
-      };
-      requestUpdate();
-    }
-
-    // ---- Database functions ----
-
-    //query to delete matching passed row data
-    function deleteRow(str) {
-      var xhttp;
-      xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("txtHint").innerHTML = this.responseText;
+        body {
+            text-align: center;
+            width: 100%;
+            height: 100%;
         }
-      };
-      xhttp.open("GET", "deleteRow.php?q=" + str, false);
-      xhttp.send();
-      deleteNReload();
-    }
 
-    // getTableSize in non async
-    function getTableSizeProc() {
-      var xhttp;
-      xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-          rowCount = this.responseText;
+        .box {
+            height: 200px;
+            width: 350px;
+
+            background-color: #9DBDCC;
+            border-radius: 5px;
+            box-shadow: inset 5px 5px rgba(0, 0, 0, 0.2);
+            margin-top: 15px;
+            margin-left: auto;
+            margin-right: auto;
+            display: inline-block;
+            font-size: 2.3em;
         }
-      };
-      xhttp.open("GET", "countTableSize.php", false); //set to true to run in asyn
-      xhttp.send();
-    }
-    //used to get the current device ID
-    function getDeviceID(count) {
-      var xhttp;
-      xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-          deviceID = this.responseText;
+
+        .gauges {
+            padding: 10px;
+            margin-top: 10px;
+            margin-left: auto;
+            margin-right: auto;
+            display: inline-block;
         }
-      };
-      xhttp.open("GET", "getDeviceID.php?q=" + count, false); //ask for the current ID
-      xhttp.send();
-    }
-    //used to get the friendly device name
-    function getFriendlyName(count) {
-      var xhttp;
-      xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-          friendlyName = this.responseText;
+    </style>
+
+    <body>
+        <h1>Smart Pots!</h1>
+
+        <hr>
+
+        <center>
+            <div id="top">
+                <div class="gauges" id="left">
+                    <h3>House Temp</h3>
+                    <iframe width="450" height="260" src="https://thingspeak.com/channels/1059962/widgets/182008"></iframe>
+                </div>
+                <div class="gauges" id="right">
+                    <h3>House Humidity</h3>
+                    <iframe width="450" height="260" src="https://thingspeak.com/channels/1059962/widgets/182006"></iframe>
+                </div>
+            </div>
+        </center>
+
+        <hr>
+
+        <a href="//192.168.1.187/add_device.html">
+            <button type="button" class="btn btn-success">Add New Pot</button>
+        </a>
+
+        <div id="statusText">...</div>
+    </body>
+
+    <script>
+        // ### VARS!!!! ###
+
+        // How often the window reloads.
+        const windowReloadTime = 60000;
+
+        // Set to the current device ID in the series after calling getDeviceID passing in the row required.
+        var deviceID;
+
+        // The number of rows in the table.
+        var rowCount;
+
+        // Set to the current friendly name of the device.
+        var friendlyName;
+
+        // API access token for particle.
+        var accessToken = "192ef342ae50ab0951e952d752a3c9c20e5abcf3";
+
+        // Name of the particle var for the moisture value.
+        var moistureVar2get = "moistureValue";
+
+        // Name of the particle var for the light value.
+        var lightVar2get = "lightValue";
+
+        // The result of the call to get the light value.
+        var resOfLight;
+
+        // The result of the call to get the moisture value.
+        var resOfmoisture;
+
+        // Start off true as it is the first load.
+        var firstLoad = true;
+
+        // Amount of plants in the database.
+        var numPlants;
+
+        // Any moisture reading below this level will render the plant box element the color red.
+        var idealWaterLevel = 700;
+
+        // Any moisture reading above this level would be seen as a high level
+        var highWaterLevel = 1000;
+
+        // ### Functions ###
+        // ### Timed Call to update functions
+        window.setInterval(deleteNReload, windowReloadTime);
+        // reload every min
+
+        // Updates the required plant data.
+        function updateAndBuildPlants(id, deviceInput, useableName, deviceToRemove) {
+            var requestURLmoisture = "https://api.particle.io/v1/devices/" + deviceInput + "/" + moistureVar2get + "/?access_token=" + accessToken;
+            // Set the moisture GET URL
+
+            // Set the light GET URL
+            var requestURLlight = "https://api.particle.io/v1/devices/" + deviceInput + "/" + lightVar2get + "/?access_token=" + accessToken;
+
+            // Update(or Build) each box in async, wait for the response of each fetch request however.
+            // meaning that each box will be build in parallel however each box will wait for their individual fetch requests
+            const requestUpdate = async () => {
+                const moistureResponse = await fetch(requestURLmoisture);
+                const lightResponse = await fetch(requestURLlight);
+                const jsonMoistureData = await moistureResponse.json(); // Response of the moisture fetch returned in json
+                const jsonLightData = await lightResponse.json();
+                // Response of the light fetch returned in json
+
+                // Set the results
+                resOfmoisture = jsonMoistureData.result;
+                resOfLight = jsonLightData.result;
+
+                // Display the data according to the amount of water.
+                if (parseInt(resOfmoisture, 10) < idealWaterLevel) {
+                    $(document.body).append('<div class="box" id ="' + id + '" style="background-color: red; height: 270px; color: white;"><h1>' + useableName + '</h1><p id="lightText">Light Level: <span class="lightText" id="lightAmounts">' + resOfLight + '</span><br><p id="moistureText">Moisture Level: <span class="moistureText" id="moistureAmounts">' + resOfmoisture + '</span><br><p style="text-decoration: underline; ">Water Yo Plant</p><br><button id="updateButton" class="btn btn-danger" onclick="deleteRow(' + deviceToRemove + ')">Remove</button></div>');
+                } else if (parseInt(resOfmoisture, 10) < highWaterLevel) {
+                    $(document.body).append('<div class="box" id ="' + id + '" style="background-color: green;"><h1>' + useableName + '</h1><p id="lightText">Light Level: <span class="lightText" id="lightAmounts">' + resOfLight + '</span><br><p id="moistureText">Moisture Level: <span class="moistureText" id="moistureAmounts">' + resOfmoisture + '</span><br><br><button id="updateButton" class="btn btn-danger" onclick="deleteRow(' + deviceToRemove + ')">Remove</button></div>');
+                } else {
+                    $(document.body).append('<div class="box" id ="' + id + '"><h1>' + useableName + '</h1><p id="lightText">Light Level: <span class="lightText" id="lightAmounts">' + resOfLight + '</span><br><p id="moistureText">Moisture Level: <span class="moistureText" id="moistureAmounts">' + resOfmoisture + '</span><br><br><button id="updateButton" class="btn btn-danger" onclick="deleteRow(' + deviceToRemove + ')">Remove</button></div>');
+                }
+
+                // Set the loading text back to null.
+                document.getElementById("statusText").innerHTML = '...';
+
+                // The load of the elements has happened at least once now.
+                firstLoad = false;
+            }
+
+            // Call the update plant data method.
+            requestUpdate();
         }
-      };
-      xhttp.open("GET", "getFriendlyValue.php?q=" + count, false); //ask for the current ID
-      xhttp.send();
-    }
 
-    // ---- Build the plant element boxes ----
+        // ---- Database functions ----
 
-    //build the plant items
-    function loadPlants() {
-      getTableSizeProc(); //get the table size in proc
-      var sizeString = rowCount; // equal to the row count built from the above function
-      //alert(rowCount);
-
-      document.getElementById("txtHint").innerHTML =
-        "Loading... " + sizeString + " Plants"; // display the amount of devices while loading plants
-      //turn the size into a base 10 int
-      size = parseInt(sizeString, 10);
-      // start at 0
-      var i = 0;
-      //alert(size);
-      // If there are no plants in the database then don't try loading any
-      if (size > 0) {
-        //while there are still items in the database keep building plants
-        while (i < size) {
-          getDeviceID(i); // get the current device name from the database in row (i)
-          getFriendlyName(i); //get the current friendly name from the database in row (i)
-
-          let newTestVar = "'" + deviceID + "'"; // figuring out that I had to add the ' ' inside the " " so that jquery didn't remove the '' when appending took way to long
-          //# the magic happens here
-          updateAndBuildPlants(i, deviceID, friendlyName, newTestVar); //pass into the main funciton that gets the values from particle and builds the boxes
-          //Move on to the next plant in the database
-          i++;
+        // Query to delete matching passed row data
+        function deleteRow(str) {
+            var xhttp;
+            xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    document.getElementById("statusText").innerHTML = this.responseText;
+                }
+            };
+            xhttp.open("GET", "deleteRow.php?q=" + str, false);
+            xhttp.send();
+            deleteNReload();
         }
-      } else {
-        document.getElementById("txtHint").innerHTML =
-          "No Plants Found In Database!"; // display text that no plants were found in the database
-      }
-    }
 
-    // --- update and main function ---
+        // getTableSize in non async
+        function getTableSizeProc() {
+            var xhttp;
+            xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    rowCount = this.responseText;
+                }
+            };
+            xhttp.open("GET", "countTableSize.php", false); // set to true to run in asyn
+            xhttp.send();
+        }
+        // Used to get the current device ID
+        function getDeviceID(count) {
+            var xhttp;
+            xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    deviceID = this.responseText;
+                }
+            };
+            xhttp.open("GET", "getDeviceID.php?q=" + count, false); // ask for the current ID
+            xhttp.send();
+        }
+        // Used to get the friendly device name
+        function getFriendlyName(count) {
+            var xhttp;
+            xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    friendlyName = this.responseText;
+                }
+            };
+            xhttp.open("GET", "getFriendlyValue.php?q=" + count, false); // ask for the current ID
+            xhttp.send();
+        }
 
-    //function deletes plant elements and reloads new values
-    function deleteNReload() {
-      $(".box").remove(); // remove the current box elements
-      loadPlants(); // create new elements with updated elements
-    }
+        // ---- Build the plant element boxes ----
 
-    // when document ready do the following
-    $(document).ready(function () {
-      loadPlants();
-    });
-  </script>
+        // Build the plant items
+        function loadPlants() {
+            getTableSizeProc();
+            // Get the table numPlants in proc.
+
+            // Equal to the row count built from the above function.
+            var sizeString = rowCount;
+
+            // display the amount of devices while loading plants
+            document.getElementById("statusText").innerHTML = 'Loading... ' + sizeString + ' Plants';
+
+            // turn the numPlants into a base 10 int
+            numPlants = parseInt(sizeString, 10);
+
+            // start at 0
+            var plantNum = 0;
+
+            // If there are no plants in the database then don't try loading any
+            if (numPlants > 0) { // while there are still items in the database keep building plants
+                while (plantNum < numPlants) {
+                    getDeviceID(plantNum);
+                    // get the current device name from the database in row (plantNum)
+
+                    // get the current friendly name from the database in row (plantNum)
+                    getFriendlyName(plantNum);
+
+                    // figuring out that I had to add the ' ' inside the " " so that jquery didn't remove the '' when appending took way to long
+                    let newTestVar = "'" + deviceID + "'";
+
+                    // # the magic happens here
+                    // pass into the main funciton that gets the values from particle and builds the boxes
+                    updateAndBuildPlants(plantNum, deviceID, friendlyName, newTestVar);
+
+                    // Move on to the next plant in the database
+                    plantNum++;
+                }
+            } else {
+                document.getElementById("statusText").innerHTML = 'No Plants Found In Database!'; // display text that no plants were found in the database
+            }
+        }
+
+        // --- update and main function ---
+
+        // Function deletes plant elements and reloads new values.
+        function deleteNReload() {
+            $('.box').remove(); // Remove the current box elements.
+            loadPlants(); // Create new elements with updated elements.
+        }
+
+        // When document ready do the following.
+        $(document).ready(function () {
+            loadPlants();
+        });
+
+    </script>
 </html>
