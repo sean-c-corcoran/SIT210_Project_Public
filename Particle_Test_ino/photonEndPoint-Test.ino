@@ -5,7 +5,7 @@
  *              it also has a notification system, that publishes public events if the moisture level gets to low, it does have a set variable that allows 
  *              for the event to published at set time intervals.  
  * Author: Sean Corcoran
- * Date: 16/05/05
+ * Date: 16/05/20
  * Version: 2.1
  */
 
@@ -18,7 +18,6 @@ int lightRealtime;       // <- Real time light reading
 int moistureAvg;         // <- The Avg of the soil mosture after the set sampling time
 int lightAvg;            // <- The Avg of then light sensor after the set sampling time
 int numOfSamples = 59;   // <- Amount for samples to take of sensor readings (samples are taken 1 second apart) default should be set to 59 (1 min of sampling)
-
 long notificationInterval = 120000; // (60000 = 1 min) #issue event notifcations at these time intervals
 long triggerTime;                    // used to hold the value of the time of the last notification
 bool firstTrigger = true;            // used to allow the first trigger and start the last trigger time
@@ -54,12 +53,15 @@ void loop()
     // set each item in the array to a reading from the sensors
     moistureRealTime = analogRead(moistureSensor); // <-- Get Value from the sensor and set it as the realtime
     lightRealtime = analogRead(lightSensor);       // <-- Get Value from the sensor and set it as the realtime
+    
     // build the array from the readings
     moistureSamples[i] = moistureRealTime;
     lightSamples[i] = lightRealtime;
+    
     // add up all the items in the arrays
     sumOfMoisture += moistureSamples[i];
     sumOfLight += lightSamples[i];
+    
     // hardcoded to wait 1 second before getting another sample
     delay(1000);
   }
@@ -80,14 +82,12 @@ void notificationSys()
   if (moistureAvg < soilWaterMin && moistureAvg > sensorMin && firstTrigger)
   {
     triggerTime = millis(); // set the tigger time from first fire
-    //Particle.publish("WaterLow", deviceID, PRIVATE); //publish the low water event and send the device ID so the database can look it up if known
-    Particle.publish("WaterLow", String(moistureAvg, DEC), PUBLIC); //publish the low water event and the current moisture avg for sending the notifcation
-    firstTrigger = false;                                           //tigger has fired at least once
+    Particle.publish("WaterLow", String(moistureAvg, DEC), PUBLIC); // publish the low water event and the current moisture avg for sending the notifcation
+    firstTrigger = false;                                           // tigger has fired at least once
   }
   else if (moistureAvg < soilWaterMin && moistureAvg > sensorMin && (millis() - triggerTime) > notificationInterval) //send another notification as long as the time of the notification interval from the last update has passed.
   {
     triggerTime = millis(); //new time since fire
-    //Particle.publish("WaterLow", deviceID, PUBLIC); //publish the low water event and send the device ID so the database can look it up if known
     Particle.publish("WaterLow", String(moistureAvg, DEC), PUBLIC); //publish the low water event and the current moisture avg for sending the notifcation
   }
   else if (moistureAvg < soilWaterMin && moistureAvg > sensorMin) // water level is still to low, however a notification was sent so don't send another one
@@ -96,6 +96,6 @@ void notificationSys()
   }
   else
   {
-    //do nothing plant has water
+    // do nothing plant has water
   }
 }
